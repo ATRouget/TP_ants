@@ -19,6 +19,7 @@ class AntColony :
     
     def generer_tous_chemins(self) :
 
+
     def calculer_probabilites_mouvement(self, chemin) :
         derniere = chemin[-1]
         probas = []
@@ -30,7 +31,7 @@ class AntColony :
                 pheromone = self.pheromones[i][derniere]
                 P = pheromone^self.alpha * heuristique^self.beta
                 probas.append(P)
-        S = sum(proba)
+        S = sum(probas)
         if S != 0 :
             for q in range(len(probas)):
                 probas[q] = probas[q]/S
@@ -41,6 +42,12 @@ class AntColony :
 
     def deposer_pheromones(self, tous_chemins) :
     
+    
     def evaporer_pheromones(self) :
-
+        for i in range(len(self.pheromones)):
+            for j in range(len(self.pheromones)):
+                self.pheromones = self.pheromones * self.decay
+    
+    def run(self):
+        
 
