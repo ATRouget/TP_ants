@@ -35,7 +35,12 @@ def main(page):
             x = rd.uniform(50,550)
             y = rd.uniform(50,450)
             nodes.append((x,y))
+        distances = calculer_distances()
+        
         dessiner_graphe()
+
+        print(f"{len(nodes)} nœuds générés")
+        print(f"Distance entre nœud 0 et 1 : {distances[0][1]:.2f}")
     
     def dessiner_graphe():
         shapes = []
@@ -53,5 +58,17 @@ def main(page):
                                 width = 600, height = 500)
         page.update()
 
+    def calculer_distances() :
+        M = [[0 for _ in range(len(nodes))] for _ in range(len(nodes))]
+        for i in range(len(nodes)) :
+            for j in range(len(nodes)) :
+                xi,yi = nodes[i]
+                xj,yj = nodes[j]
+                d = sqrt((xi-xj)**2 + (yi-yj)**2)
+                M[i][j] = d
+        return M
+
+
+    
 
 ft.run(main)
