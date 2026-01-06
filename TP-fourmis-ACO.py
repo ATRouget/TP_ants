@@ -7,4 +7,40 @@ class AntColony :
         self.decay = decay
         self.alpha = alpha
         self.beta = beta
-        self.pheromones = [[1.0 for _ in range(len(distances))] for _ in range(len(distances))] 
+        self.pheromones = [[1.0 for _ in range(len(distances))] for _ in range(len(distances))]
+        self.meilleur_chemin = None
+        self.meilleure_distance = float('inf')
+    
+    def calculer_distance_chemin(self, chemin) :
+        S = 0
+        for v in range(len(chemin)-1) :
+            S = S + self.distances[chemin[v]][chemin[v+1]]
+        return S
+    
+    def generer_tous_chemins(self) :
+
+    def calculer_probabilites_mouvement(self, chemin) :
+        derniere = chemin[-1]
+        probas = []
+        for i in range(len(self.distances)):
+            if i in chemin :
+                probas.append(0)
+            else :
+                heuristique = 1 / self.distances[i][derniere]
+                pheromone = self.pheromones[i][derniere]
+                P = pheromone^self.alpha * heuristique^self.beta
+                probas.append(P)
+        S = sum(proba)
+        if S != 0 :
+            for q in range(len(probas)):
+                probas[q] = probas[q]/S
+        return probas
+    
+    def choisir_ville_suivante(self, probas) :
+        
+
+    def deposer_pheromones(self, tous_chemins) :
+    
+    def evaporer_pheromones(self) :
+
+
