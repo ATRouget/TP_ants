@@ -1,3 +1,5 @@
+import random as rd
+
 class AntColony :
     def __init__(self, distances, n_ants, n_best, n_iterations, decay, alpha = 1, beta = 2):
         self.distances = distances
@@ -18,8 +20,18 @@ class AntColony :
         return S
     
     def generer_tous_chemins(self) :
-
-
+        tous_chemins = []
+        for i in range(self.n_ants) :
+            chemin = []
+            ville = rd.uniform(0, len(self.distances))
+            chemin.append(ville)
+            while len(chemin) < len(self.distances) :
+                probas = self.calculer_probabilites_mouvement(chemin)
+                ville = self.choisir_ville_suivante(probas)
+                chemin.append(ville)
+            for c in chemin :
+                tous_chemins.append((c, self.caculer_distance_chemin(c)))
+        return tous_chemins
 
     def calculer_probabilites_mouvement(self, chemin) :
         derniere = chemin[-1]
@@ -39,6 +51,9 @@ class AntColony :
         return probas
     
     def choisir_ville_suivante(self, probas) :
+        r = rd.random()
+        for i in range(len(probas)):
+            
         
 
     def deposer_pheromones(self, tous_chemins) :
@@ -55,6 +70,15 @@ class AntColony :
                 self.pheromones = self.pheromones * self.decay
     
     def run(self):
+        
+        for _ in range(self.n_iterations):
+            tous_chemins = self.generer_tous_chemins()
+            meilleur = min(tous_chemins, key = lambda x : x[1])
+            if meilleur[1] < self.meilleure_distance :
+                self.meilleur_chemin = meilleur[0]
+                self.meilleure_distance = meilleur[1]
+            self.deposer_pheromones(tous_chemins)
+            self.evaporer_pheromones()
 
 
 
