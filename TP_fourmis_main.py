@@ -42,10 +42,10 @@ def main(page):
                         createur, 
                         ft.Row([best_field, decay_field, alpha_field, beta_field ]),
                         ft.Divider(), 
-                        statut, 
+                        ft.Row([statut, iteration_text, pheromone_text, path_text]),
                         ft.Row([zone, start_btn, stop_btn])]))
 
-    nodes = []
+    
 
 
 
@@ -76,9 +76,10 @@ def main(page):
                 angle=angle,
                 alignment=ft.alignment.Alignment(-1, 0)))
 
-
+    nodes = []
 
     def generer_nodes():
+        nonlocal nodes, distances, pheromones
         nodes = []
         try:
             N = int(nodes_field.value)
