@@ -1,6 +1,9 @@
 import flet as ft
 import random as rd
 from math import *
+import threading as 
+from AntColony import AntColony
+
 
 def main(page):
     page.title = "Algorithme de colonie de fourmis"

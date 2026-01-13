@@ -1,4 +1,5 @@
 import random as rd
+import time
 
 class AntColony :
     def __init__(self, distances, n_ants, n_best, n_iterations, decay, alpha = 1, beta = 2):
@@ -40,8 +41,8 @@ class AntColony :
             if i in chemin :
                 probas.append(0)
             else :
-                heuristique = 1 / self.distances[i][derniere]
-                pheromone = self.pheromones[i][derniere]
+                heuristique = 1 / self.distances[derniere][i]
+                pheromone = self.pheromones[derniere][i]
                 P = pheromone^self.alpha * heuristique^self.beta
                 probas.append(P)
         S = sum(probas)
@@ -52,7 +53,12 @@ class AntColony :
     
     def choisir_ville_suivante(self, probas) :
         r = rd.random()
-        for i in range(len(probas)):
+        cumul = 0
+        for i in range(len(probas)):            
+            cumul = cumul + probas[i]
+            if cumul >= r:
+                return i
+        return len(probas) - 1
             
         
 
@@ -61,17 +67,16 @@ class AntColony :
         for x in tous_chemins[:self.n_best] :
             for i in range(len(x[0])-1) :
                 self.pheromones[x[i]][x[i+1]] += 1/x[1]
-                self.pheromones[x[i+1]][x[i]] += 1/x[1]
-
     
     def evaporer_pheromones(self) :
         for i in range(len(self.pheromones)):
             for j in range(len(self.pheromones)):
                 self.pheromones = self.pheromones * self.decay
     
-    def run(self):
-        
-        for _ in range(self.n_iterations):
+    def run(self, callback_maj, evenement_arret):
+        if evenement_arret.is_set():
+                break
+        for i in range(self.n_iterations):
             tous_chemins = self.generer_tous_chemins()
             meilleur = min(tous_chemins, key = lambda x : x[1])
             if meilleur[1] < self.meilleure_distance :
@@ -79,7 +84,10 @@ class AntColony :
                 self.meilleure_distance = meilleur[1]
             self.deposer_pheromones(tous_chemins)
             self.evaporer_pheromones()
+        
+            callback_maj(i, meilleur, self.pheromones)
+            time.sleep(0.1)
 
 
 
-## Dans étape 5, créer fonctions 3, 6, 7, 9##
+## Dans étape 5, créer fonctions 6, 9##
