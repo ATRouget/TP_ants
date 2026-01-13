@@ -20,6 +20,7 @@ class AntColony :
     def generer_tous_chemins(self) :
 
 
+
     def calculer_probabilites_mouvement(self, chemin) :
         derniere = chemin[-1]
         probas = []
@@ -41,7 +42,12 @@ class AntColony :
         
 
     def deposer_pheromones(self, tous_chemins) :
-    
+        tous_chemins.sort(key = lambda x : x[1])
+        for x in tous_chemins[:self.n_best] :
+            for i in range(len(x[0])-1) :
+                self.pheromones[x[i]][x[i+1]] += 1/x[1]
+                self.pheromones[x[i+1]][x[i]] += 1/x[1]
+
     
     def evaporer_pheromones(self) :
         for i in range(len(self.pheromones)):
@@ -49,5 +55,7 @@ class AntColony :
                 self.pheromones = self.pheromones * self.decay
     
     def run(self):
-        
 
+
+
+## Dans étape 5, créer fonctions 3, 6, 7, 9##
