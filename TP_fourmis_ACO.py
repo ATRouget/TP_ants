@@ -75,7 +75,7 @@ class AntColony :
     
     def run(self, callback_maj, evenement_arret):
         if evenement_arret.is_set():
-                break
+            return None
         for i in range(self.n_iterations):
             tous_chemins = self.generer_tous_chemins()
             meilleur = min(tous_chemins, key = lambda x : x[1])
@@ -87,7 +87,3 @@ class AntColony :
         
             callback_maj(i, meilleur, self.pheromones)
             time.sleep(0.1)
-
-
-
-## Dans étape 5, créer fonctions 6, 9##

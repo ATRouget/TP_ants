@@ -1,0 +1,297 @@
+import flet as ft
+import random as rd
+from math import *
+import threading
+from TP_fourmis_ACO import AntColony
+
+
+def main(page):
+    page.title = "Algorithme de colonie de fourmis"
+    page.theme_mode = ft.ThemeMode.LIGHT
+    page.padding = 20
+    
+    titre = ft.Text("Visualisation de l'Algorithme", size=24)
+
+    createur = ft.Button("Générer le graphe", on_click=lambda e: generer_nodes())
+    start_btn = ft.Button("Start", on_click = lambda e: start_algorithm(e))
+    stop_btn = ft.Button("Stop", on_click = lambda e: (stop_algorithm(e), restart_graph(e)))
+
+    nodes_field = ft.TextField(label = 'Nombre de noeuds', value = '20', width = 150)
+    ants_field = ft.TextField(label = 'Nombre de fourmis', value = '15', width = 150)
+    iterations_field = ft.TextField(label = "Nombre de d'itérations", value = '100', width = 150)
+    
+
+    zone = ft.Container(width = 600, height =  500, bgcolor = 'lightblue', border = ft.border.all(2,'blue'))
+
+    statut = ft.Text("Prêt à démarrer", color = 'green', size = 16)
+
+
+    iteration_text = ft.Text("Itération: 0", size=16)
+    pheromone_text = ft.Text("Phéromones moyennes: ", size=14)
+    path_text = ft.Text("Meilleur chemin: ", size=14)
+
+
+    best_field = ft.TextField(label="Meilleures fourmis", value="3", width=150)
+    decay_field = ft.TextField(label="Decay", value="0.95", width=150)
+    alpha_field = ft.TextField(label="Alpha", value="1", width=150)
+    beta_field = ft.TextField(label="Beta", value="2", width=150)
+
+
+    page.add(ft.Column([titre, ft.Text("Paramètres de l'algorithme", size = 16), 
+                        ft.Row([nodes_field,ants_field,iterations_field]),
+                        createur, 
+                        ft.Row([best_field, decay_field, alpha_field, beta_field ]),
+                        ft.Divider(), 
+                        statut, 
+                        ft.Row([zone, start_btn, stop_btn])]))
+
+    nodes = []
+
+
+
+
+    distances = []
+    pheromones = []
+    best_path = []
+    iteration = 0
+    running = False
+    stop_event = threading.Event()
+
+    best_field = ft.TextField(label="Meilleures fourmis", value="3", width=150)
+    decay_field = ft.TextField(label="Decay", value="0.95", width=150)
+    alpha_field = ft.TextField(label="Alpha", value="1", width=150)
+    beta_field = ft.TextField(label="Beta", value="2", width=150)
+
+    def create_line(x1, y1, x2, y2, colour, thickness) : 
+        dx = x2 - x1
+        dy = y2 - y1
+        length = sqrt(dx*dx + dy*dy)
+        angle = atan2(dy, dx)
+        return ft.Container(width=length,
+            height=thickness,
+            bgcolor= colour,
+            left=x1,
+            top=y1 - thickness / 2,
+            rotate=ft.Rotate(
+                angle=angle,
+                alignment=ft.alignment.Alignment(-1, 0)))
+
+
+
+    def generer_nodes():
+        nodes = []
+        try:
+            N = int(nodes_field.value)
+        except ValueError: N=20
+        for _ in range(N):
+            x = rd.uniform(50,550)
+            y = rd.uniform(50,450)
+            nodes.append((x,y))
+        distances = calculer_distances()
+        pheromones = [[1.0 for _ in range(len(distances))] 
+                  for _ in range(len(distances))]
+        
+        dessiner_graphe()
+
+        print(f"{len(nodes)} nœuds générés")
+        print(f"Distance entre nœud 0 et 1 : {distances[0][1]:.2f}")
+    
+    
+    def calculer_distances() :
+        M = [[0 for _ in range(len(nodes))] for _ in range(len(nodes))]
+        for i in range(len(nodes)) :
+            for j in range(len(nodes)) :
+                xi,yi = nodes[i]
+                xj,yj = nodes[j]
+                d = sqrt((xi-xj)**2 + (yi-yj)**2)
+                M[i][j] = d
+        return M
+
+
+    def update_callback(iter_num, current_best_path, current_pheromones):
+        
+        #Callback appelé par l’algorithme à chaque itération
+        #pour mettre à jour l’interface graphique.
+
+        nonlocal iteration, best_path, pheromones
+
+        # Mise à jour des variables globales
+        iteration = iter_num
+        best_path = current_best_path[0] if current_best_path else []
+        pheromones = current_pheromones
+
+        async def update_ui():
+            # Affichage du numéro d’itération
+            iteration_text.value = f"Itération: {iteration}"
+
+            # Affichage du meilleur chemin et de sa longueur
+            if current_best_path:
+                path_text.value = (
+                    f"Meilleur chemin: {best_path} "
+                    f"(longueur: {current_best_path[1]:.2f})")
+
+            # Calcul de la moyenne des phéromones
+            avg = sum(sum(row) for row in pheromones) / (len(nodes) ** 2)
+            pheromone_text.value = f"Phéromones moyennes: {avg:.4f}"
+
+            # Redessiner le graphe
+            dessiner_graphe()
+
+        # Lancement asynchrone pour ne pas bloquer l’UI
+        page.run_task(update_ui)
+    
+    def start_algorithm(e):
+        nonlocal running
+        # Empêche un double lancement
+        if running:
+            return
+
+        running = True
+        stop_event.clear()
+
+        # Mise à jour de l’interface
+        start_btn.disabled = True
+        stop_btn.disabled = False
+        statut.value = "En cours d'exécution..."
+        statut.color = "orange"
+        page.update()
+
+        def run_ants():
+            try:
+                # Création de la colonie de fourmis
+                colony = AntColony(
+                    distances,
+                    int(ants_field.value),
+                    int(best_field.value),
+                    int(iterations_field.value),
+                    float(decay_field.value),
+                    float(alpha_field.value),
+                    float(beta_field.value),)
+            except ValueError:
+                # Valeurs par défaut en cas d’erreur utilisateur
+                colony = AntColony(distances, 15, 3, 100, 0.95, 1, 2)
+
+            # Lancement de l’algorithme
+            colony.run(update_callback, stop_event)
+
+            async def finalize():
+                
+                #Finalize the Ant Colony Optimization algorithm
+                #Called when the algorithm has finished its execution
+                
+                nonlocal running
+                running = False
+                # Enable the "Start" button and disable the "Stop" button
+                start_btn.disabled = False
+                stop_btn.disabled = True
+                # Update the status text
+                statut.value = "Terminé"
+                statut.color = "green"
+
+                page.update()
+
+            page.run_task(finalize)
+
+        # Thread pour exécution non bloquante
+        threading.Thread(target=run_ants, daemon=True).start()
+
+    def stop_algorithm(e):
+    #Arrête l’algorithme en cours d’exécution.
+    #Called when the "Stop" button is clicked.
+    
+        nonlocal running
+        # Set the stop event to signal the algorithm to stop
+        stop_event.set()
+        # Disable the "Stop" button and enable the "Start" button
+        start_btn.disabled = False
+        stop_btn.disabled = True
+        # Update the status text
+        statut.value = "Arrêté"
+        statut.color = "red"
+        # Update the page
+        page.update()
+
+
+    def restart_graph(e):
+        #Réinitialise complètement le graphe et l’interface.
+
+        nonlocal iteration, best_path, running
+
+        running = False
+        stop_event.set()
+
+        # Réinitialisation des variables
+        iteration = 0
+        best_path = []
+
+        # Réinitialisation de l’UI
+        iteration_text.value = "Itération: 0"
+        path_text.value = "Meilleur chemin: "
+        pheromone_text.value = "Phéromones moyennes: "
+        statut.value = "Prêt"
+        statut.color = "green"
+
+        # Disable the "Stop" button and enable the "Start" button
+        start_btn.disabled = False
+        stop_btn.disabled = True
+
+        # Génération de nouveaux nœuds
+        generer_nodes()
+
+    def dessiner_graphe():
+        shapes = []
+        for i in range(len(nodes)) :
+            x,y = nodes[i]
+            noeud = ft.Container(border_radius = 10,
+                                 height = 20,
+                                 width = 20,
+                                 left = x-10,
+                                 top = y-10,
+                                 content = ft.Text(f"{i}"),
+                                 bgcolor = "green")
+            shapes.append(noeud)
+        zone.content = ft.Stack(controls = shapes, 
+                                width = 600, height = 500)
+        
+        if pheromones and len(pheromones) > 0:
+            # Valeur maximale des phéromones (pour normalisation)
+            max_pheromone = max(max(row) for row in pheromones) if pheromones else 1
+            # Parcours de toutes les paires de nœuds
+            for i in range(len(nodes)):
+                for j in range(i + 1, len(nodes)):
+                    # Seuil minimal pour éviter l’encombrement visuel
+                    if pheromones[i][j] > 0.1:
+                        # Opacité proportionnelle à la quantité de phéromones
+                        opacity = min(1, pheromones[i][j] / max_pheromone)
+
+                        # Épaisseur proportionnelle aux phéromones
+                        thickness = max(1, (pheromones[i][j] / max_pheromone) * 3)
+
+                        # Création de la ligne entre les deux nœuds
+                        line = create_line(
+                            nodes[i][0], nodes[i][1],
+                            nodes[j][0], nodes[j][1],
+                            ft.Colors.with_opacity(opacity, ft.Colors.BLUE),
+                            thickness)
+                        shapes.append(line)
+        
+        # Dessin du meilleur chemin courant
+
+        if best_path:
+            for i in range(len(best_path) - 1):
+                start_idx = best_path[i]
+                end_idx = best_path[i + 1]
+
+                # Vérification de sécurité
+                if start_idx < len(nodes) and end_idx < len(nodes):
+                    line = create_line(
+                        nodes[start_idx][0], nodes[start_idx][1],
+                        nodes[end_idx][0], nodes[end_idx][1],
+                        "red",   # Couleur du meilleur chemin
+                        3)# Épaisseur renforcée
+                    shapes.append(line)
+    
+        page.update()
+
+
+ft.run(main)
