@@ -74,9 +74,10 @@ class AntColony :
                 self.pheromones = self.pheromones * self.decay
     
     def run(self, callback_maj, evenement_arret):
-        if evenement_arret.is_set():
-            return None
+        
         for i in range(self.n_iterations):
+            if evenement_arret.is_set():
+                break
             tous_chemins = self.generer_tous_chemins()
             meilleur = min(tous_chemins, key = lambda x : x[1])
             if meilleur[1] < self.meilleure_distance :
